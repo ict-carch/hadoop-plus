@@ -9,6 +9,7 @@
 *.svn
 *.classpath
 *.settings
+*.project
 
 #output file
 target
