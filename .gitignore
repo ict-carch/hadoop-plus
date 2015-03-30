@@ -3,6 +3,19 @@
 # Mobile Tools for Java (J2ME)
 .mtj.tmp/
 
+#IDE temp file
+*.iml
+*.idea
+*.svn
+*.classpath
+*.settings
+
+#output file
+target
+
+#logs
+logs*
+
 # Package Files #
 *.jar
 *.war
