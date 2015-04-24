@@ -1,2 +1,0 @@
-# hadoop-plus
-##hadoop-plus
