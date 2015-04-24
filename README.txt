@@ -5,10 +5,10 @@ https://github.com/ict-carch/hadoop-plus
 
 Features
 -----------
-Support resource management of CPU cores and GPU cores.
-Manage memory transfer among CPU cores and GPU cores.
-Enable three task running models including ONLY_GPU, ONLY_GPU and BOTH
-Provide PMap and PReduce programming interfaces to programmers 
+-Support resource management of CPU cores and GPU cores.
+-Manage memory transfer among CPU cores and GPU cores.
+-Enable three task running models including ONLY_GPU, ONLY_GPU and BOTH
+-Provide PMap and PReduce programming interfaces to programmers 
 
 Users APIs
 ------------
