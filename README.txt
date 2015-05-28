@@ -8,6 +8,7 @@ Features
 -Support resource management of CPU cores and GPU cores.
 -Manage memory transfer among CPU cores and GPU cores.
 -Enable three task running models including ONLY_GPU, ONLY_GPU and BOTH
+-Enable users to specify the preferred implementation running on CPU with JAVA (by default) and OMP (OpenMP)
 -Provide PMap and PReduce programming interfaces to programmers 
 
 Users APIs
