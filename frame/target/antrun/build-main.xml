@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<project name="maven-antrun-" default="main"  >
+<target name="main">
+  <mkdir dir="/home/hewt/framework/hadoop-common/frame/target/native"/>
+  <exec dir="/home/hewt/framework/hadoop-common/frame/target/native" executable="cmake" failonerror="true">
+    <arg line="/home/hewt/framework/hadoop-common/frame/src/main/native"/>
+  </exec>
+  <exec dir="/home/hewt/framework/hadoop-common/frame/target/native" executable="make" failonerror="true">
+    <arg line="VERBOSE=1"/>
+  </exec>
+</target>
+</project>

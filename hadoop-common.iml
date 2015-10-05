@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module type="JAVA_MODULE" version="4">
+  <component name="NewModuleRootManager" inherit-compiler-output="true">
+    <exclude-output />
+    <content url="file://$MODULE_DIR$">
+      <sourceFolder url="file://$MODULE_DIR$/KNN" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/KNN_array" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/KNN_arraywo_heap" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/KNN_hpSort" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/KNN_list" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/KNN_new" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/KNN_ori" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/KNN_seqFile" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/KNN_seqNum" isTestSource="false" />
+    </content>
+    <orderEntry type="inheritedJdk" />
+    <orderEntry type="sourceFolder" forTests="false" />
+    <orderEntry type="library" name="target7" level="project" />
+    <orderEntry type="library" name="KNN-0.0.1-SNAPSHOT7" level="project" />
+    <orderEntry type="library" name="KNN-0.0.1-SNAPSHOT2" level="project" />
+    <orderEntry type="library" name="target" level="project" />
+    <orderEntry type="library" name="KNN-0.0.1-SNAPSHOT9" level="project" />
+    <orderEntry type="library" name="KNN-0.0.1-SNAPSHOT5" level="project" />
+    <orderEntry type="library" name="KNN-0.0.1-SNAPSHOT10" level="project" />
+    <orderEntry type="library" name="KNN-0.0.1-SNAPSHOT4" level="project" />
+    <orderEntry type="library" name="lib" level="project" />
+    <orderEntry type="library" name="KNN-0.0.1-SNAPSHOT" level="project" />
+    <orderEntry type="library" name="KNN-0.0.1-SNAPSHOT3" level="project" />
+    <orderEntry type="library" name="KNN-0.0.1-SNAPSHOT1" level="project" />
+    <orderEntry type="library" name="KNN-0.0.1-SNAPSHOT6" level="project" />
+    <orderEntry type="library" name="KNN-0.0.1-SNAPSHOT8" level="project" />
+    <orderEntry type="module" module-name="main53" />
+    <orderEntry type="module" module-name="main62" />
+    <orderEntry type="module" module-name="main4" />
+    <orderEntry type="module" module-name="main31" />
+    <orderEntry type="module" module-name="test17" />
+    <orderEntry type="module" module-name="main2" />
+    <orderEntry type="module" module-name="main29" />
+    <orderEntry type="module" module-name="test2" />
+    <orderEntry type="module" module-name="main59" />
+    <orderEntry type="module" module-name="main37" />
+    <orderEntry type="module" module-name="test30" />
+    <orderEntry type="module" module-name="main39" />
+    <orderEntry type="module" module-name="main" />
+    <orderEntry type="module" module-name="main12" />
+    <orderEntry type="module" module-name="main50" />
+    <orderEntry type="module" module-name="test35" />
+    <orderEntry type="module" module-name="test5" />
+    <orderEntry type="module" module-name="main24" />
+    <orderEntry type="module" module-name="main23" />
+    <orderEntry type="module" module-name="main19" />
+  </component>
+</module>

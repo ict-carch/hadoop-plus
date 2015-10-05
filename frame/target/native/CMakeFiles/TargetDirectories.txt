@@ -1,0 +1,2 @@
+/home/hewt/framework/hadoop-common/frame/target/native/CMakeFiles/FrameJni.dir
+/home/hewt/framework/hadoop-common/frame/target/native/CMakeFiles/dataTrans.dir

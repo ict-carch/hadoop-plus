@@ -1,0 +1,93 @@
+dev-support/jdiff/hadoop-hdfs_0.21.0.xml: So, the NameNode will revoke the locks and live file-creates
+dev-support/jdiff/hadoop-hdfs_0.20.0.xml: So, the NameNode will revoke the locks and live file-creates
+dev-support/jdiff/hadoop-hdfs_0.22.0.xml: So, the NameNode will revoke the locks and live file-creates
+src/main/native/libhdfs/hdfs.c: * The 'file-handle' to a file in hdfs.
+src/main/native/libhdfs/hdfs.c:    return (file->type == INPUT);
+src/main/native/libhdfs/hdfs.c:    if (file->type != INPUT) {
+src/main/native/libhdfs/hdfs.c:    jthr = invokeMethod(env, &jVal, INSTANCE, file->file, 
+src/main/native/libhdfs/hdfs.c:    return (file->type == OUTPUT);
+src/main/native/libhdfs/hdfs.c:    return !!(file->flags & HDFS_FILE_SUPPORTS_DIRECT_READ);
+src/main/native/libhdfs/hdfs.c:    file->flags &= ~HDFS_FILE_SUPPORTS_DIRECT_READ;
+src/main/native/libhdfs/hdfs.c: * @param path: The file-path for which to construct org.apache.hadoop.fs.Path
+src/main/native/libhdfs/hdfs.c:    file->file = (*env)->NewGlobalRef(env, jFile);
+src/main/native/libhdfs/hdfs.c:    if (!file->file) {
+src/main/native/libhdfs/hdfs.c:    file->type = (((flags & O_WRONLY) == 0) ? INPUT : OUTPUT);
+src/main/native/libhdfs/hdfs.c:    file->flags = 0;
+src/main/native/libhdfs/hdfs.c:            file->flags |= HDFS_FILE_SUPPORTS_DIRECT_READ;
+src/main/native/libhdfs/hdfs.c:            if (file->file) {
+src/main/native/libhdfs/hdfs.c:                (*env)->DeleteGlobalRef(env, file->file);
+src/main/native/libhdfs/hdfs.c:    if (!file || file->type == UNINITIALIZED) {
+src/main/native/libhdfs/hdfs.c:    const char* interface = (file->type == INPUT) ? 
+src/main/native/libhdfs/hdfs.c:    jthr = invokeMethod(env, NULL, INSTANCE, file->file, interface,
+src/main/native/libhdfs/hdfs.c:        const char *interfaceShortName = (file->type == INPUT) ? 
+src/main/native/libhdfs/hdfs.c:    (*env)->DeleteGlobalRef(env, file->file);
+src/main/native/libhdfs/test/test_libhdfs_ops.c:        //Generic file-system operations
+src/main/java/org/apache/hadoop/hdfs/protocol/ClientProtocol.java:   * So, the NameNode will revoke the locks and live file-creates
+src/main/java/org/apache/hadoop/hdfs/server/namenode/FSEditLog.java:   * Format all configured journals which are not file-based.
+src/main/java/org/apache/hadoop/hdfs/server/namenode/FSEditLog.java:   * File-based journals are skipped, since they are formatted by the
+src/main/java/org/apache/hadoop/hdfs/server/namenode/FSDirectory.java:    // modify file-> block and blocksMap
+src/main/java/org/apache/hadoop/hdfs/server/namenode/FSImageFormat.java:      // Add file->block mapping
+src/main/java/org/apache/hadoop/hdfs/LeaseRenewer.java: * Used by {@link DFSClient} for renewing file-being-written leases
+src/main/java/org/apache/hadoop/hdfs/LeaseRenewer.java:            //found a non-empty file-being-written map
+src/main/java/org/apache/hadoop/hdfs/LeaseRenewer.java:        //discover the first time that all file-being-written maps are empty.
+src/main/java/org/apache/hadoop/hdfs/DFSConfigKeys.java:  public static final String  DFS_CLIENT_FILE_BLOCK_STORAGE_LOCATIONS_NUM_THREADS = "dfs.client.file-block-storage-locations.num-threads";
+src/main/java/org/apache/hadoop/hdfs/DFSConfigKeys.java:  public static final String  DFS_CLIENT_FILE_BLOCK_STORAGE_LOCATIONS_TIMEOUT = "dfs.client.file-block-storage-locations.timeout";
+src/main/java/org/apache/hadoop/hdfs/DFSClient.java:  /** Is file-being-written map empty? */
+src/main/resources/hdfs-default.xml:  <name>dfs.client.file-block-storage-locations.num-threads</name>
+src/main/resources/hdfs-default.xml:  <name>dfs.client.file-block-storage-locations.timeout</name>
+src/contrib/libwebhdfs/src/hdfs_web.c: * The 'file-handle' to a file in hdfs.
+src/contrib/libwebhdfs/src/hdfs_web.c:    freeWebFileHandle(file->file);
+src/contrib/libwebhdfs/src/hdfs_web.c:    struct webhdfsFileHandle *webhandle = file->file;
+src/contrib/libwebhdfs/src/hdfs_web.c:    append = file->flags & O_APPEND;
+src/contrib/libwebhdfs/src/hdfs_web.c:    data->flags = file->flags;
+src/contrib/libwebhdfs/src/hdfs_web.c:    file->flags = flags;
+src/contrib/libwebhdfs/src/hdfs_web.c:    file->type = accmode == O_RDONLY ? INPUT : OUTPUT;
+src/contrib/libwebhdfs/src/hdfs_web.c:    file->offset = 0;
+src/contrib/libwebhdfs/src/hdfs_web.c:    file->file = webhandle;
+src/contrib/libwebhdfs/src/hdfs_web.c:    if (file->type == OUTPUT) {
+src/contrib/libwebhdfs/src/hdfs_web.c:    if (fs == NULL || file == NULL || file->type != OUTPUT || length < 0) {
+src/contrib/libwebhdfs/src/hdfs_web.c:    struct webhdfsFileHandle *wfile = file->file;
+src/contrib/libwebhdfs/src/hdfs_web.c:    if (wfile->uploadBuffer && wfile->uploadBuffer->openFlag) {
+src/contrib/libwebhdfs/src/hdfs_web.c:        resetWebhdfsBuffer(wfile->uploadBuffer, buffer, length);
+src/contrib/libwebhdfs/src/hdfs_web.c:                wfile->absPath);
+src/contrib/libwebhdfs/src/hdfs_web.c:    if (file->type == OUTPUT) {
+src/contrib/libwebhdfs/src/hdfs_web.c:        wfile = file->file;
+src/contrib/libwebhdfs/src/hdfs_web.c:        pthread_mutex_lock(&(wfile->uploadBuffer->writeMutex));
+src/contrib/libwebhdfs/src/hdfs_web.c:        wfile->uploadBuffer->closeFlag = 1;
+src/contrib/libwebhdfs/src/hdfs_web.c:        pthread_cond_signal(&wfile->uploadBuffer->newwrite_or_close);
+src/contrib/libwebhdfs/src/hdfs_web.c:        pthread_mutex_unlock(&(wfile->uploadBuffer->writeMutex));
+src/contrib/libwebhdfs/src/hdfs_web.c:        ret = pthread_join(wfile->connThread, &respv);
+src/contrib/libwebhdfs/src/hdfs_web.c:        if (file->flags & O_APPEND) {
+src/contrib/libwebhdfs/src/hdfs_web.c:    return (file->type == INPUT);
+src/contrib/libwebhdfs/src/hdfs_web.c:    return (file->type == OUTPUT);
+src/contrib/libwebhdfs/src/hdfs_web.c:    if (fs == NULL || file == NULL || file->type != INPUT || buffer == NULL ||
+src/contrib/libwebhdfs/src/hdfs_web.c:    ret = createUrlForOPEN(fs->nn, fs->port, file->file->absPath,
+src/contrib/libwebhdfs/src/hdfs_web.c:    ret = hdfsReadImpl(fs, file, buffer, (tSize) file->offset,
+src/contrib/libwebhdfs/src/hdfs_web.c:    file->offset += numRead; 
+src/contrib/libwebhdfs/src/hdfs_web.c:    if (!fs || !file || (file->type == OUTPUT) || (desiredPos < 0)) {
+src/contrib/libwebhdfs/src/hdfs_web.c:    wf = file->file;
+src/contrib/libwebhdfs/src/hdfs_web.c:    file->offset = desiredPos;
+src/contrib/libwebhdfs/src/hdfs_web.c:    return file->offset;
+src/contrib/libwebhdfs/src/hdfs_web.c:    if (file->type != OUTPUT) {
+src/contrib/libwebhdfs/src/hdfs_web.c:    if (file->type != OUTPUT) {
+src/contrib/libwebhdfs/src/test_libwebhdfs_ops.c:        //Generic file-system operations
+src/test/java/org/apache/hadoop/hdfs/web/TestWebHDFS.java:              Path p = new Path(d, "file-"+i);
+src/test/java/org/apache/hadoop/hdfs/server/namenode/NNThroughputBenchmark.java:   * Measure how many get-file-status calls the name-node can handle per second.
+src/test/java/org/apache/hadoop/hdfs/server/namenode/CreateEditsLog.java:                    "_to_B" + blocks[blocksPerFile-1].getBlockId() + "_";
+src/test/java/org/apache/hadoop/hdfs/server/namenode/CreateEditsLog.java:       numFiles + " File-Creates, each file with " + blocksPerFile + " blocks");
+src/test/java/org/apache/hadoop/hdfs/server/namenode/TestListCorruptFileBlocks.java:  // deliberately remove blocks from a file and validate the list-corrupt-file-blocks API
+src/test/java/org/apache/hadoop/hdfs/TestLeaseRecovery2.java:    // verify that file-size matches
+src/test/java/org/apache/hadoop/hdfs/TestLeaseRecovery2.java:    // verify that file-size matches
+src/test/java/org/apache/hadoop/hdfs/TestDistributedFileSystem.java:      fileSys.create(new Path("/test/dfsclose/file-0"));
+src/test/java/org/apache/hadoop/hdfs/TestDistributedFileSystem.java:      fileSys.create(new Path("/test/dfsclose/file-1"));
+src/test/java/org/apache/hadoop/hdfs/TestDistributedFileSystem.java:      String file = "/test/fileclosethenseek/file-0";
+src/test/java/org/apache/hadoop/hdfs/TestDFSMkdirs.java:      String filePath = "/mkdir-file-" + Time.now();
+src/test/resources/hadoop-dfs-dir.txt:/top-dir-120000-60/directory1/file-with-corrupt-crc 	 1984689737
+src/test/resources/hadoop-dfs-dir.txt:/top-dir-120000-60/directory1/file-with-no-crc 	 4004594475
+src/test/resources/hadoop-dfs-dir.txt:/top-dir-1Mb-512/directory1/file-with-corrupt-crc 	 1984689737
+src/test/resources/hadoop-dfs-dir.txt:/top-dir-1Mb-512/directory1/file-with-no-crc 	 4004594475
+Binary file target/test-classes/org/apache/hadoop/hdfs/TestDistributedFileSystem.class matches
+Binary file target/test-classes/org/apache/hadoop/hdfs/web/TestWebHDFS$1.class matches
+Binary file target/test-classes/org/apache/hadoop/hdfs/server/namenode/CreateEditsLog.class matches
+Binary file target/test-classes/org/apache/hadoop/hdfs/TestDFSMkdirs.class matches
+Binary file target/classes/org/apache/hadoop/hdfs/DFSConfigKeys.class matches

@@ -1,0 +1,1 @@
+/usr/bin/c++  -fPIC    -shared -Wl,-soname,libFrameJni.so -o libFrameJni.so CMakeFiles/FrameJni.dir/cn_ac_ict_htc_utils_NativeUtils.cpp.o libdataTrans.so -Wl,-rpath,/home/hewt/framework/hadoop-common/frame/target/native 

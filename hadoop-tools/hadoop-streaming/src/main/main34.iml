@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module type="JAVA_MODULE" version="4">
+  <component name="NewModuleRootManager" inherit-compiler-output="true">
+    <exclude-output />
+    <content url="file://$MODULE_DIR$">
+      <sourceFolder url="file://$MODULE_DIR$/java" isTestSource="false" />
+    </content>
+    <orderEntry type="inheritedJdk" />
+    <orderEntry type="sourceFolder" forTests="false" />
+    <orderEntry type="library" name="target7" level="project" />
+    <orderEntry type="library" name="lib" level="project" />
+    <orderEntry type="library" name="target" level="project" />
+    <orderEntry type="library" name="hadoop-annotations-2.1.0-beta" level="project" />
+    <orderEntry type="module" module-name="main62" />
+    <orderEntry type="module" module-name="test9" />
+    <orderEntry type="module" module-name="main31" />
+    <orderEntry type="module" module-name="test17" />
+    <orderEntry type="module" module-name="test2" />
+    <orderEntry type="module" module-name="main8" />
+    <orderEntry type="module" module-name="main37" />
+    <orderEntry type="module" module-name="main41" />
+    <orderEntry type="module" module-name="test30" />
+    <orderEntry type="module" module-name="main57" />
+    <orderEntry type="module" module-name="main51" />
+    <orderEntry type="module" module-name="main" />
+    <orderEntry type="module" module-name="test31" />
+    <orderEntry type="module" module-name="test35" />
+    <orderEntry type="module" module-name="test5" />
+  </component>
+</module>
