@@ -30,6 +30,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileContext;
+import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.fs.UnsupportedFileSystemException;
 import org.apache.hadoop.service.AbstractService;
 import org.apache.hadoop.yarn.api.records.ContainerId;
@@ -136,7 +137,7 @@ public class ContainersLauncher extends AbstractService
                                        launch));
      				      }finally{
      				         LOG.info("wait for data reading of " + containerId);
-                             String containerIdStr = ConverterUtils.toString(containerID);
+                             String containerIdStr = ConverterUtils.toString(containerId);
                              String appIdStr = app.getAppId().toString();
                              String relativeContainerLogDir = ContainerLaunch
                                  .getRelativeContainerLogDir(appIdStr, containerIdStr);

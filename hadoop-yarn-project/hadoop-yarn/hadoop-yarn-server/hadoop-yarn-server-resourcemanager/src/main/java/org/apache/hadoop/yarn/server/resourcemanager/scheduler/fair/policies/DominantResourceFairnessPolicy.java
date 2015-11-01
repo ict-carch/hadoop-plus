@@ -140,14 +140,34 @@ public class DominantResourceFairnessPolicy extends SchedulingPolicy {
           (pool.getMemory() * weights.getWeight(MEMORY)));
       shares.setWeight(CPU, (float)resource.getVirtualCores() /
           (pool.getVirtualCores() * weights.getWeight(CPU)));
+      shares.setWeight(GPU, (float)resource.getGPUCores() /
+              (pool.getGPUCores() * weights.getWeight(GPU)));
       // sort order vector by resource share
       if (resourceOrder != null) {
-        if (shares.getWeight(MEMORY) > shares.getWeight(CPU)) {
+        if (shares.getWeight(MEMORY) > shares.getWeight(CPU) && shares.getWeight(CPU) > shares.getWeight(GPU)) {
           resourceOrder[0] = MEMORY;
           resourceOrder[1] = CPU;
-        } else  {
+          resourceOrder[2] = GPU;
+        } else if (shares.getWeight(MEMORY) > shares.getWeight(GPU) && shares.getWeight(GPU) > shares.getWeight(CPU)) {
+          resourceOrder[0] = MEMORY;
+          resourceOrder[1] = GPU;
+          resourceOrder[2] = CPU;
+        } else if (shares.getWeight(CPU) > shares.getWeight(MEMORY) && shares.getWeight(MEMORY) > shares.getWeight(GPU)) {
           resourceOrder[0] = CPU;
           resourceOrder[1] = MEMORY;
+          resourceOrder[2] = GPU;
+        } else if (shares.getWeight(CPU) > shares.getWeight(GPU) && shares.getWeight(GPU) > shares.getWeight(MEMORY)) {
+          resourceOrder[0] = CPU;
+          resourceOrder[1] = GPU;
+          resourceOrder[2] = MEMORY;
+        } else if (shares.getWeight(GPU) > shares.getWeight(CPU) && shares.getWeight(CPU) > shares.getWeight(MEMORY)) {
+          resourceOrder[0] = GPU;
+          resourceOrder[1] = CPU;
+          resourceOrder[2] = MEMORY;
+        } else if (shares.getWeight(GPU) > shares.getWeight(MEMORY) && shares.getWeight(MEMORY) > shares.getWeight(CPU)) {
+          resourceOrder[0] = GPU;
+          resourceOrder[1] = MEMORY;
+          resourceOrder[2] = CPU;
         }
       }
     }

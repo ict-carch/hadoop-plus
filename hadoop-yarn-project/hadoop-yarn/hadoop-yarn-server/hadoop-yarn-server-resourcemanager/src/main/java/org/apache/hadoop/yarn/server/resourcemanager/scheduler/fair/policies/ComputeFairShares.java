@@ -152,6 +152,8 @@ public class ComputeFairShares {
       return resource.getMemory();
     case CPU:
       return resource.getVirtualCores();
+      case GPU:
+        return resource.getGPUCores();
     default:
       throw new IllegalArgumentException("Invalid resource");
     }
@@ -165,6 +167,8 @@ public class ComputeFairShares {
     case CPU:
       resource.setVirtualCores(val);
       break;
+      case GPU:
+        resource.setGPUCores(val);
     default:
       throw new IllegalArgumentException("Invalid resource");
     }
