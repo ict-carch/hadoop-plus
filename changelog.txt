@@ -1,4 +1,3 @@
-Edit by Zhao Jiacheng and Li Shengmei 2013-10-17
 1.TaskAttemptImpl.java
     Added: getGpuRequired();
 2.MRJobConfig.java
@@ -34,4 +33,5 @@ Edit by Zhao Jiacheng and Li Shengmei 2013-10-17
     Added: gpuCores in serviceInit() method
 16. yarn_protos.proto
     Added: "gpu_cores" field in message ResourceProto
- 
+17. ICTMapper.java
+    Added: add support to specifying prefered CPU Implementation.
