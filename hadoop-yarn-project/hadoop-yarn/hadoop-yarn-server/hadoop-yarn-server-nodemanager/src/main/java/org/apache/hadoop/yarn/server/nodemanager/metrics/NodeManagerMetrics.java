@@ -42,6 +42,7 @@ public class NodeManagerMetrics {
   @Metric("Current # of allocated containers")
       MutableGaugeInt allocatedContainers;
   @Metric MutableGaugeInt availableGB;
+  // containers are asked to get the lock before launching
   public final Lock lock = new ReentrantLock();
   public static NodeManagerMetrics create() {
     return create(DefaultMetricsSystem.instance());

@@ -645,7 +645,7 @@ public abstract class TaskAttemptImpl implements
     long resourceModificationTime = fstat.getModificationTime();
 
     return LocalResource.newInstance(resourceURL, type, visibility,
-      resourceSize, resourceModificationTim e);
+      resourceSize, resourceModificationTime);
   }
 
   /**

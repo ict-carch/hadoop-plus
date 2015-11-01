@@ -97,7 +97,7 @@ public class ArrayListWritable<E extends Writable> extends ArrayList<E> implemen
 	 */
 	public void write(DataOutput out) throws IOException {
 		out.writeInt(this.size());
-		logger.info("write " + this.size() + " elements");
+//		logger.info("write " + this.size() + " elements");
 		if (size() == 0)
 			return;
 		E obj = get(0);

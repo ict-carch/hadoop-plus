@@ -166,7 +166,7 @@ public class RawLocalFileSystem extends FileSystem {
     }
     
     @Override
-    public int rn ead(byte[] b, int off, int len) throws IOException {
+    public int read(byte[] b, int off, int len) throws IOException {
       try {
         int value = fis.read(b, off, len);
         if (value > 0) {

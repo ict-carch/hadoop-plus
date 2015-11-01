@@ -52,6 +52,6 @@ public interface Container extends EventHandler<ContainerEvent> {
   ContainerStatus cloneAndGetContainerStatus();
 
   String toString();
-
+  // add the metric and the lock to pipeline the launch of tasks
   NodeManagerMetrics getMetrics();
 }

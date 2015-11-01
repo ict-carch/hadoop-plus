@@ -116,7 +116,7 @@ public class AllocateRequestPBImpl extends AllocateRequest {
   }
 
   @Override
-  public getResponseId() {
+  public int getResponseId() {
     AllocateRequestProtoOrBuilder p = viaProto ? proto : builder;
     return p.getResponseId();
   }

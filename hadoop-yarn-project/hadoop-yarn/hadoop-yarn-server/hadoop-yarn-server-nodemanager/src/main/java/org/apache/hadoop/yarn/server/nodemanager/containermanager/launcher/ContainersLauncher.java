@@ -122,6 +122,7 @@ public class ContainersLauncher extends AbstractService
         final ContainerLaunch launch =
             new ContainerLaunch(context, getConfig(), dispatcher, exec, app,
               event.getContainer(), dirsHandler);
+		// TODO: currently only limit the tasks with GPU to be pipelined for IO
 		if(container.getResource().getGPUCores() > 0){
 		  new Thread(new Runnable() {
 			  @Override

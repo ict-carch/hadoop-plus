@@ -1213,7 +1213,7 @@ public class Job extends JobContextImpl implements JobContext {
       }
     }
     if (numReduces != 0) {
-      conf.setBooleanIfUnset("mapred.reduce   r.new-api",
+      conf.setBooleanIfUnset("mapred.reducer.new-api",
                              conf.get(oldReduceClass) == null);
       if (conf.getUseNewReducer()) {
         String mode = "new reduce API";

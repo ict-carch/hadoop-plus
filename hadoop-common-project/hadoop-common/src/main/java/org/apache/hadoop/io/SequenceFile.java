@@ -650,8 +650,7 @@ public class SequenceFile {
     private byte[] data;
     DataInputBuffer rawData = null;
     CompressionCodec codec = null;
-    CompressionInputStream decompresse
-      dStream = null;
+    CompressionInputStream decompressedStream = null;
 
     private CompressedBytes(CompressionCodec codec) {
       data = null;
