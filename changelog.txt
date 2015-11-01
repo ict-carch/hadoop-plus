@@ -36,3 +36,7 @@ Created by Zhao Jiacheng and Li Shengmei 2013-10-17
     Added: "gpu_cores" field in message ResourceProto
 17. ICTMapper.java
     Added: add support to specifying prefered CPU Implementation.
+18. Container.java, ContainersLauncher.java, and NodeManagerMetrics.java
+	Added: add a metric lock to pipeline the launching of containers with GPU
+	for stagger IO
+
