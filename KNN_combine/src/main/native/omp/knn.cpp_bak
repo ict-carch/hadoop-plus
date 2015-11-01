@@ -1,0 +1,415 @@
+#include <assert.h>
+#include <sys/time.h>
+#include <iostream>
+//#include <papi.h>
+#include "omp.h"
+#include "mkl.h"
+#include "mkl_cblas.h"
+#include "knn.h"
+
+using namespace std;
+
+#define NUM_THREAD omp_get_num_procs()
+//native order
+#define NATIVE_ORDER getNativeOrder()
+#define MAX_LOCAL_MEM 1024*1024*100
+#define TRAIN 1
+#define TEST 0
+
+int _debug = 0;
+int _is_timing = 0;
+vector <Cases> train_cases;
+vector <Cases> test_cases;
+int test_num = 0;
+int train_num = 0;
+int test_start = 0;
+int test_end = 0;
+
+
+int dataset = TRAIN;
+int dimension = 0;
+
+/******************* init_env_cpu ******************/
+
+jint init_env_cpu(char *input ,const int order,const char *args)
+{
+//	long mem_size = getLong_Simple(input,0,order);
+	if(_debug){
+		printf("length ..... %d\n",strlen(args));
+		if(args != NULL&& strlen(args)!=0)
+			printf("init command args :%s\n",args);
+	}
+	if(args!=NULL && strlen(args)!=0){
+		map<string,string> args_map;
+		parse_to_map(args,args_map);
+		dimension = getDimension(args_map["dimension"]);
+	}
+		printf("init_env_cpu. \tsuccess!\n");
+		return ERR_CODE_OK;
+}
+
+/************************ put_data_cpu *******************/
+
+jint put_data_cpu(const char *args,const vector<int> input_offset,char *input_data,const int input_limit,const int order ,int *global_input_mem_size)
+{
+	int _debug = 1;
+	if(_debug){
+		printf("put_data_cpu ,\tthe buffer limit is %d.\n",input_limit);
+	}
+	map<string,string> cmd_args;
+	if(args != NULL){
+		parse_to_map(args,cmd_args);
+		if(cmd_args.size()>0){
+                    dimension = getDimension(cmd_args["dimension"]);
+		    dataset = getDataset(cmd_args["dataset"]);
+		    _debug = getDebug(cmd_args["isDebug"]);
+		}
+	}
+	if(_debug){
+		printf("input offset size is %d.\t global mem size is %d\n",input_offset.size(),*global_input_mem_size);
+	}
+	switch(dataset){
+	    case TRAIN:
+	    {
+		int case_num = input_offset.size() ;
+	    	if(_debug)
+	    	    cout << "put " << case_num << "training vectors " << endl;
+		while(case_num > 0)
+		{
+                    int vector_start = input_offset[case_num - 1];
+		    Cases tmp;
+		    tmp.key = getLong_Simple(input_data, vector_start, order);
+		    tmp.value = getDoubleVector(input_data, vector_start + SIZE_LONG, dimension, order);
+	            train_cases.push_back(tmp);
+	            case_num--;
+		    if(_debug)
+		    {
+			cout << "train_key: " << train_cases.back().key << ", vector: ";
+			for(int i = 0; i < dimension; i++) 
+			    cout << train_cases.back().value[i] << " ";
+			cout << endl;
+		    }
+		}
+	    	*global_input_mem_size += input_limit;
+	    	return ERR_CODE_OK;
+	    }
+	    case TEST:
+	    {
+		int case_num = input_offset.size();
+	    	if(_debug)
+	    	    cout << "put " << case_num << "test vectors " << endl;
+		while(case_num > 0)
+		{
+                    int vector_start = input_offset[case_num - 1];
+		    Cases tmp;
+		    tmp.key = getLong_Simple(input_data, vector_start, order);
+		    tmp.value = getDoubleVector(input_data, vector_start + SIZE_LONG, dimension, order);
+	            test_cases.push_back(tmp);
+	            case_num--;
+		    if(_debug)
+		    {
+			cout << "test_key: " << test_cases.back().key << ", vector: ";
+			for(int i = 0; i < dimension; i++)
+			    cout << test_cases.back().value[i] << " ";
+			 cout << endl; 
+	 	    }
+		}
+	    	*global_input_mem_size += input_limit;
+ 	     	return ERR_CODE_OK;
+	    }
+	    default:
+	    {
+	    	//nothing
+	    	//may do the default trans the data which is without process data
+	    	break;
+ 	     }
+ 	} 
+//	if(_debug)
+//		printf("after trans data ,the local_size is %d.\n " , local_size );
+	return ERR_CODE_OK;
+}
+
+/************************  calc_cpu *********************/
+
+jint calc_cpu(const char *args,const int order,const int g_size,char *dst,int *dst_size,const int dst_capacity)
+{
+    printf("beginning calc cpu.\n");
+	map<string,string> cmd_args;
+	int k = 1, mkl_thread = 0, omp_thread = 0, _debug = 0;
+	long long start_usec, end_usec;
+	if(args != NULL){
+		if(_debug){
+			printf("calc args : %s\n",args);
+		}
+		parse_to_map(args,cmd_args);
+		if(cmd_args.size()>0){
+		    dimension = getDimension(cmd_args["dimension"]);
+		    k = getK(cmd_args["k"]);
+		    mkl_thread = getMKLthread(cmd_args["mkl_thread"]);
+		    omp_thread = getOMPthread(cmd_args["omp_thread"]);
+		    _debug = getDebug(cmd_args["isDebug"]);
+		}
+	}
+	jint rs = ERR_CODE_OK;
+	if(_debug)
+	    printf("initial dst_size: %d, there are total %d test cases\n", *dst_size, test_cases.size());
+        int size_line = SIZE_LONG + dimension * SIZE_OF_DOUBLE;
+        int size_result = SIZE_OF_LONG + SIZE_OF_LONG + SIZE_OF_DOUBLE;
+	int test_blk = dst_capacity / (size_result * k);
+	if(_debug)
+	    printf("test_blk = %d\n", test_blk);
+//	int test_blk = 100;
+	test_end = test_start + test_blk;
+	
+	if(test_end > test_cases.size())
+	    test_end = test_cases.size();
+        struct timeval ustart, uend;
+	if(test_start < test_cases.size())
+	{
+	    if(_debug)
+	        printf("test_start = %d, test_end = %d \n", test_start, test_end);
+             gettimeofday(&ustart, NULL);
+//	     start_usec = PAPI_get_real_usec();
+	    rs = train_dot_product(dimension, k, order, dst, dst_size, dst_capacity, test_start, test_end, mkl_thread, omp_thread, _debug);
+//            rs = seq_dot_product(dimension, k, order, dst, dst_size, dst_capacity, test_start, test_end);
+//	     end_usec = PAPI_get_real_usec();
+            gettimeofday(&uend, NULL);
+             int utime = 1000000 * (uend.tv_sec - ustart.tv_sec) + (uend.tv_usec - ustart.tv_usec);
+//            printf("time used for seq dot product is: %d us\n", utime);
+            printf("time used for train omp dot product is: %d us\n", utime);
+//            printf("time used for train omp dot product measured by papi is: %ld ms\n", start_usec - end_usec);
+	    rs = ERR_CODE_OK;
+	    if(rs == ERR_CODE_OK)
+	    {
+ 	        int _debug = 0;
+	        if(_debug)
+	        {
+	            printf("dst_size: %d\nthe results are:\n", *dst_size);
+	            int pointer = 0;
+		    int test_num = test_end - test_start;
+	            for(int i = 0; i < test_num ; i++)
+	        	for(int j = 0; j < k; j++)
+	        	{
+	        	    printf("testCase: %ld, key: ", getLong_Simple(dst, pointer, order));
+                            pointer += SIZE_OF_LONG;
+	        	    printf("%ld, d: ", getLong_Simple(dst, pointer, order));
+                            pointer += SIZE_OF_LONG;
+	                    printf("%lf\n", getDouble_Simple(dst, pointer, order));
+ 	        	    pointer += SIZE_OF_DOUBLE;
+ 	        	}
+	        }
+ 		if(test_end < test_cases.size())
+		{
+ 		    rs = ERR_CODE_CONTINUE;
+
+	            test_start += test_blk;
+	            test_end += test_blk;
+	            if(test_end > test_cases.size())
+	                test_end = test_cases.size();
+		}
+ 	    }
+	}
+ 	return rs;
+}
+
+jint seq_dot_product(const int dimension, const int kn,  const int order, char *output, int *outputsize, const int output_capacity, const int test_start, const int test_end)
+{
+    int size_vector = dimension * SIZE_OF_DOUBLE;
+    int size_line = SIZE_LONG + dimension * SIZE_OF_DOUBLE;
+    int size_result = SIZE_OF_LONG + SIZE_OF_LONG + SIZE_OF_DOUBLE;
+    mkl_set_num_threads(1);
+    int i, k;
+    for (i = test_start; i < test_end; i++)
+    { 
+        if(_debug)
+	{
+	    printf("[input] test_key %ld:", test_cases[i].key);
+            for(int d = 0; d < dimension; d++)
+        	printf(" %lf", test_cases[i].value[d]);
+            printf("\n");
+	}
+	if(kn <= train_cases.size())
+	{
+            KeyDistance *heap = new KeyDistance[kn]();
+//	    if(_debug)
+//                for (k = 0; k < kn; k++)
+//                    printf("heap[%d].key = %ld, heap[%d].distance = %lf\n", k, heap[k].key, k, heap[k].distance);
+            for (k = 0; k < kn ; k++)
+             { 
+//    	        printf("begin dot product train_cases[%ld] and test_cases[%ld]\n", train_cases[k].key, test_cases[i].key);
+
+                if(_debug)
+		{
+		    printf("[input] train_key %ld:", train_cases[k].key);
+               	    for(int d = 0; d < dimension; d++)
+               		printf(" %lf", train_cases[k].value[d]);
+               	     printf("\n");
+		} 
+//                double res = ddot(test_cases[i].key, train_cases[k].key, dimension, test_cases[i].value, train_cases[k].value);
+                double res = cblas_ddot(dimension, train_cases[k].value, 1, test_cases[i].value, 1);
+		if(_debug)
+		{
+		    printf("[MapOut] testCase: %ld key: %ld d: %lf\n", test_cases[i].key, train_cases[k].key, res);
+		}
+		heap[k].key = train_cases[k].key;
+		heap[k].distance = res;
+            }
+	    BuildHeap(heap, (kn-1));
+	    for (; k < train_cases.size(); k++)
+	    {
+
+//                double res = ddot(test_cases[i].key, train_cases[k].key, dimension, test_cases[i].value, train_cases[k].value);
+                double res = cblas_ddot(dimension, train_cases[k].value, 1, test_cases[i].value, 1);
+		if(_debug)
+		{
+		    printf("[MapOut] testCase: %ld key: %ld d: %lf\n", test_cases[i].key, train_cases[k].key, res);
+		}
+		if(res < heap[0].distance)
+		{
+		    heap[0].key = train_cases[k].key;
+		    heap[0].distance = res;
+		    MaxHeap(heap, 0, kn-1);
+		}
+	    }
+            int base = i * kn * size_result;
+	    for(int kk = 0; kk < kn; kk++)
+	    {
+	        memcpy(output + base + kk * size_result, &test_cases[i].key, SIZE_OF_LONG);
+	        memcpy(output + base + kk * size_result + SIZE_OF_LONG, &heap[kk].key, SIZE_OF_LONG);
+	        memcpy(output + base + kk * size_result + SIZE_OF_LONG * 2, &heap[kk].distance, SIZE_OF_DOUBLE);
+	    }
+	    delete[] heap;
+	}
+//	else{ // TO CHECK
+//            for (k = 0; k < test_num; k++)
+//            {
+//                double res = cblas_ddot(dimension, x[k], 1, y, 1);
+//                memcpy(output + *outputsize, &key_tmp, SIZE_OF_LONG);
+//                *outputsize += SIZE_OF_LONG;
+//                memcpy(output + *outputsize, &train_keys[k], SIZE_OF_LONG);
+//                *outputsize += SIZE_OF_LONG;
+//                memcpy(output + *outputsize, &res, SIZE_OF_DOUBLE );
+//                *outputsize += SIZE_OF_DOUBLE;
+//            }
+//	}
+    }
+    *outputsize += (test_end - test_start) * kn * size_result; 
+    printf("free temp mems.\n");
+    if(_debug)
+        printf("outputsize: %d\n", *outputsize);
+    cout << endl;
+    return ERR_CODE_OK;
+}
+double ddot(const long test_key, const long train_key, const int dimension, const double *x, const double *y)
+{
+    double res = 0;
+    for(int i = 0; i < dimension; i++)
+    {
+	res += x[i] * y[i];
+	if(_debug)
+	    printf("after x[%ld][%d](%lf) * y[%ld][%d](%lf), res = %lf\n", test_key, i, x[i], train_key, i, y[i], res);
+    }
+    return res;
+}
+jint train_dot_product(const int dimension, const int kn, const int order, char *output, int *outputsize, const int output_capacity, const int test_start, const int test_end, const int mkl_thread, const int omp_thread, const int _debug)
+{
+    int rs = ERR_CODE_OK;
+    int size_vector = dimension * SIZE_OF_DOUBLE;
+    int size_line = SIZE_LONG + dimension * SIZE_OF_DOUBLE;
+    int size_result = SIZE_OF_LONG + SIZE_OF_LONG + SIZE_OF_DOUBLE;
+    int num_threads;
+    if(mkl_thread)
+        mkl_set_num_threads(mkl_thread);
+    if(omp_thread)
+	num_threads = omp_thread;
+    else
+        num_threads = getNumThreads();
+    printf("mkl_thread = %d, omp_thread = %d\n", mkl_thread, num_threads);
+    if(_debug)
+	cout << "train_num = " << train_cases.size() << "; test_start = " << test_start << "; test_end = " << test_end << endl;
+    int i, j, k;
+//    printf("/*****************launching %d threads.**********************/\n", num_threads);
+#pragma omp parallel for num_threads(num_threads) private(i, j, k) shared(output, train_cases, test_cases)
+    for (i = test_start; i < test_end; i++)
+    {
+
+	if(kn <= train_cases.size())
+	{
+            KeyDistance *heap = new KeyDistance[kn]();
+//	    if(_debug)
+//                for (k = 0; k < kn; k++)
+//                    printf("heap[%d].key = %ld, heap[%d].distance = %lf\n", k, heap[k].key, k, heap[k].distance);
+            for (k = 0; k < kn ; k++)
+            {
+// 	            int _debug = 0;
+//        	    if(_debug)
+//    	                 printf("begin dot product train_cases[%ld] and test_cases[%ld]\n", train_cases[k].key, test_cases[i].key);
+    //	    for(int d = 0; d < dimension; d++)
+    //		printf(" %lf", x[k][d]);
+    //	    pri ntf("\n");
+//                double res = ddot(test_cases[i].key, train_cases[k].key, dimension, test_cases[i].value, train_cases[k].value);
+                 double res = cblas_ddot(dimension, train_cases[k].value, 1, test_cases[i].value, 1);
+		heap[k].key = train_cases[k].key;
+		heap[k].distance = res;
+            }
+	    BuildHeap(heap, (kn-1));
+	    for (; k < train_cases.size(); k++)
+	    {
+
+//                double res = ddot(test_cases[i].key, train_cases[k].key, dimension, test_cases[i].value, train_cases[k].value);
+                double res = cblas_ddot(dimension, train_cases[k].value, 1, test_cases[i].value, 1);
+//		if(res < heap[0].distance)
+		if(res > heap[0].distance)
+		{
+		    heap[0].key = train_cases[k].key;
+		    heap[0].distance = res;
+		    MaxHeap(heap, 0, kn-1);
+		}
+	    }
+            int base = (i - test_start) * kn * size_result;
+	    for(int kk = 0; kk < kn; kk++)
+	    {
+	        memcpy(output + base + kk * size_result, &test_cases[i].key, SIZE_OF_LONG);
+	        memcpy(output + base + kk * size_result + SIZE_OF_LONG, &heap[kk].key, SIZE_OF_LONG);
+	        memcpy(output + base + kk * size_result + SIZE_OF_LONG * 2, &heap[kk].distance, SIZE_OF_DOUBLE);
+                if(_debug)
+                   printf("putting testKey: %ld, trainKey: %ld, d: %lf to outputbuffer\n", test_cases[i].key, heap[kk].key, heap[kk].distance);
+	    }
+	    delete[] heap;
+	}
+//	else //TO CHECK
+//	{
+//            for (k = 0; k < train_num; k++)
+//            {
+//    	    printf("begin dot product x[%d] and y[%ld]\nvector x:", k, key_tmp);
+//    //	    for(int d = 0; d < dimension; d++)
+//    //		printf(" %lf", x[k][d]);
+//    //	    printf("\n");
+//    //            double res = ddot(test_keys[k], key_tmp, dimension, x[k], y);
+//                double res = cblas_ddot(dimension, x[k], 1, y, 1);
+//                int base = (i * train_num + k) * size_result;
+//                memcpy(output + base, &train_keys[k], SIZE_OF_LONG);
+//                memcpy(output + base + SIZE_OF_LONG, &key_tmp, SIZE_OF_LONG);
+//                memcpy(output + base + SIZE_OF_LONG * 2, &res, SIZE_OF_DOUBLE );
+//                if(_debug)
+//                    printf("\nbase: %d, testCase: %d, key: %d, d: %lf" ,base, train_keys[k], key_tmp, res);
+//            }
+//	}
+//	}
+    }
+    *outputsize += (test_end - test_start) * kn * size_result; 
+    if(_debug)
+        printf("outputsize: %d\n", *outputsize);
+    cout << endl;
+    return rs;
+}
+
+/*************** free_mem_cpu *******************/
+jint free_mem_cpu()
+{
+	printf("free mem of cpu ....\n");
+	vector<Cases> tmp;
+	test_cases.swap(tmp);
+	train_cases.swap(tmp);
+	return ERR_CODE_OK;
+}

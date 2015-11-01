@@ -1,0 +1,2 @@
+/home/hewt/framework/hadoop-common/KNN_seqNum/src/main/native/build/cuda/CMakeFiles/KNNCuda.dir
+/home/hewt/framework/hadoop-common/KNN_seqNum/src/main/native/build/omp/CMakeFiles/KNNOMP.dir

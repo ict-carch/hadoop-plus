@@ -1,0 +1,125 @@
+package cn.ac.ict.htc.knn.data;
+
+import java.io.IOException;
+import java.nio.ByteOrder;
+import java.nio.ByteBuffer;
+import java.util.Iterator;
+
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.apache.hadoop.io.IntWritable;
+import org.apache.hadoop.io.DoubleWritable;
+import org.apache.hadoop.io.LongWritable;
+import org.apache.hadoop.mapreduce.InputSplit;
+import org.apache.hadoop.mapreduce.RecordReader;
+import org.apache.hadoop.mapreduce.TaskAttemptContext;
+import org.apache.hadoop.mapreduce.lib.input.SequenceFileRecordReader;
+
+import java.util.ArrayList;
+import cn.ac.ict.htc.tools.ArrayListWritable;
+import cn.ac.ict.htc.tools.NumberListWritable;
+import cn.ac.ict.htc.utils.BufferUtils;
+import cn.ac.ict.htc.utils.PairOfByteBuffers;
+
+public class VectorSequenceFileRecordReader extends
+		RecordReader<LongWritable, PairOfByteBuffers> {
+	static private final Log logger = LogFactory.getLog(VectorSequenceFileRecordReader.class);
+	private SequenceFileRecordReader<LongWritable, NumberListWritable<Double>> recordReader = null;
+//	private SequenceFileRecordReader<LongWritable, ArrayListWritable> recordReader = null;
+	private boolean readerClosed = false;
+	private final LongWritable key = new LongWritable();
+	private  PairOfByteBuffers pair;
+	private int maxRecordSize;
+
+	public VectorSequenceFileRecordReader() {
+//		recordReader = new SequenceFileRecordReader<LongWritable, ArrayListWritable>();
+		recordReader = new SequenceFileRecordReader<LongWritable, NumberListWritable<Double>>();
+		pair = new PairOfByteBuffers();
+	}
+
+	@Override
+	public void initialize(InputSplit split, TaskAttemptContext context)
+			throws IOException, InterruptedException {
+		int halfOfBufferSize = pair.value.capacity() / 2;
+		maxRecordSize = halfOfBufferSize;
+		recordReader.initialize(split, context);
+		pair.offset.order(ByteOrder.nativeOrder());
+		pair.value.order(ByteOrder.nativeOrder());
+	}
+
+	@Override
+	public boolean nextKeyValue() throws IOException, InterruptedException {
+		boolean retVal = false;
+		pair.offset.clear();
+		pair.value.clear();
+		while (isBufferNotFull() && moreToRead()) {
+			if (pair.value.position() == 0) {
+				key.set(recordReader.getCurrentKey().get());
+			}
+//			ArrayListWritable<DoubleWritable> elements = recordReader.getCurrentValue();
+			NumberListWritable<Double> elements = recordReader.getCurrentValue();
+			pair.offset.putInt( pair.value.position());
+			pair.value.putLong(recordReader.getCurrentKey().get());//key
+			for(Iterator<Double> iter = elements.get().iterator();iter.hasNext();){
+				Double e = iter.next();
+				pair.value.putDouble(e);
+//				System.err.println("putting " + e.floatValue() + " to pair.value.");
+//				count++;
+			}
+//			pair.value.position(pos+num*(4+8));
+			retVal = true;
+		}
+		if (retVal) {
+			pair.offset.flip();
+			pair.value.flip();
+			logger.debug("value.position = " + pair.value.position()
+					+ "value.limit = " + pair.value.limit());
+			logger.debug("offset.position = " + pair.offset.position()
+					+ "offset.limit = " + pair.offset.limit());
+		}
+		return retVal;
+	}
+
+	private boolean isBufferNotFull() {
+		return pair.value.position() + getMaxRecordSize() < pair.value.capacity();
+	}
+
+	private boolean moreToRead() throws IOException, InterruptedException {
+		if (!readerClosed) {
+			if (recordReader.nextKeyValue()) {
+				return true;
+			} else {
+				readerClosed = true;
+				return false;
+			}
+		} else {
+			return false;
+		}
+	}
+
+	private int getMaxRecordSize() {
+		return maxRecordSize;
+	}
+
+	@Override
+	public LongWritable getCurrentKey() throws IOException, InterruptedException {
+		return key;
+	}
+
+	@Override
+	public PairOfByteBuffers getCurrentValue() throws IOException,
+			InterruptedException {
+		return pair;
+	}
+
+	@Override
+	public float getProgress() throws IOException, InterruptedException {
+		return recordReader.getProgress();
+	}
+
+	@Override
+	public void close() throws IOException {
+		recordReader.close();
+	}
+
+}
