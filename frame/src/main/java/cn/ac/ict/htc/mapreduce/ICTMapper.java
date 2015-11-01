@@ -35,11 +35,13 @@ public abstract class ICTMapper<KEYIN,VALUEIN,KEYOUT,VALUEOUT> extends
 	public static final String LIBRARY_NAME_GPU = CLASS_NAME + ".library.name.gpu";
 	//
 	public static final String PREF_RESOURCE = CLASS_NAME+".pref.resource";
+	public static final String CONTAINER_IMPL = CLASS_NAME+".pref.impl";
 	//default value
-	public static final long DEFAULT_GLOBAL_MEM = 1024L * 1024L * 500L;  								//default 500m
-	public static final int DEFAULT_OUTPUT_CAPACITY = 1024 * 1024 * 100;							//default 100m
-	public static final String DEFAULT_ARGS = null;																//default null
+	public static final long DEFAULT_GLOBAL_MEM = 1024L * 1024L * 500L;  					//default 500m
+	public static final int DEFAULT_OUTPUT_CAPACITY = 1024 * 1024 * 100;					//default 100m
+	public static final String DEFAULT_ARGS = null;											//default null
 	public static final Pref_Resource PREF_RESOURCE_DEFAULT = Pref_Resource.BOTH;			//default both
+	public static final Container_Type container_type_default = Container_Type.JAVA;		//default Java
 	public static final String DEFAULT_LIBRARY_NAME = "libUserFunctions.so";
 	//
 	public static final int LONG_SIZE = 8;
@@ -52,13 +54,16 @@ public abstract class ICTMapper<KEYIN,VALUEIN,KEYOUT,VALUEOUT> extends
 	//flag
 	protected enum FlagRes{CPU,GPU}
 	//variable
-	private ByteBuffer output_buffer = null;																		//null
-	private FlagRes res_last = null; 																					//null
+	private ByteBuffer output_buffer = null;												//null
+	private FlagRes res_last = null; 														//null
 	private String cmd_args = null;
-	private ByteBuffer init_buffer = null;																			//content:global_size(8)+order(1)+lib_name(*)
+	private ByteBuffer init_buffer = null;													//content:global_size(8)+order(1)+lib_name(*)
 	private String lib_name = ICTMapper.DEFAULT_LIBRARY_NAME;
 	
 	private int calc_rs = NativeUtils.ERR_CODE_OK;
+	protected Container_Type container_type;			
+	protected  PairOfByteBuffers pairOfBuffer; 
+	protected int maxRecordSize;
 
 	/**
 	 * initial jni_env , CPU or GPU
@@ -69,7 +74,9 @@ public abstract class ICTMapper<KEYIN,VALUEIN,KEYOUT,VALUEOUT> extends
 			InterruptedException {
 		super.setup(context);
 		Configuration conf = context.getConfiguration();
+		logger.info("pref_Resource conf key " + ICTMapper.PREF_RESOURCE);
 		Pref_Resource pref_Resource = Pref_Resource.getPref_Resource(conf.get(ICTMapper.PREF_RESOURCE , ICTMapper.PREF_RESOURCE_DEFAULT.toString()));
+		Container_Type impl_pref = Container_Type.getPref_Impl(conf.get(ICTMapper.CONTAINER_IMPL, ICTMapper.container_type_default.toString()));
 		logger.info("pref_Resource conf >>>> " + pref_Resource.toString());
 		//
 		int ret_code = NativeUtils.ERR_CODE_ERR;
@@ -86,19 +93,30 @@ public abstract class ICTMapper<KEYIN,VALUEIN,KEYOUT,VALUEOUT> extends
 			if(ret_code==NativeUtils.ERR_CODE_ERR){
 				logger.error("trying  initial CPU!");
 				ret_code = initialResource(context, init_buffer, FlagRes.CPU);
+				container_type = impl_pref;
+			}
+			else {
+				container_type = Container_Type.GPU;
 			}
 		}else if(pref_Resource == Pref_Resource.ONLY_GPU){
 			if(getGpus() > 0&&getGpuID()!=-1){
 				ret_code = initialResource(context, init_buffer, FlagRes.GPU);
+				container_type = Container_Type.GPU;
 			}else{
 				logger.error("initial gpu failed,there are no gpus");
 			}
 		}else if(pref_Resource == Pref_Resource.ONLY_CPU){
 			ret_code = initialResource(context, init_buffer, FlagRes.CPU);
+			container_type = impl_pref;
 		}
 		if(ret_code == NativeUtils.ERR_CODE_ERR){
 			logger.error("initial failed,will shutdown ..");
 			throw new RuntimeException("initial failed,the resource lack ...");
+		}
+		if(container_type != Container_Type.JAVA) {
+			pairOfBuffer = new PairOfByteBuffers();
+			pairOfBuffer.offset.order(ByteOrder.nativeOrder());
+            pairOfBuffer.value.order(ByteOrder.nativeOrder());
 		}
 		cmd_args = ICTMapper.DEFAULT_ARGS;
 	}
@@ -111,16 +129,48 @@ public abstract class ICTMapper<KEYIN,VALUEIN,KEYOUT,VALUEOUT> extends
 		setup(context);
 	    try {
             Date t_start = new Date();
-	      while (context.nextKeyValue()) {
-	        map(context.getCurrentKey(), context.getCurrentValue(), context);
-	      }
+	        while (context.nextKeyValue()) {
+				if(container_type == Container_Type.JAVA) {
+	  	        	JAVAmap(context.getCurrentKey(), context.getCurrentValue(), context);
+				}
+				else {
+	  	        	map(context.getCurrentKey(), context.getCurrentValue(), context);
+				}
+	    	}
             Date t_end = new Date();
             logger.info("put data time:" + (t_end.getTime()-t_start.getTime()));
-	      int state = calc(context);
-	      logger.info("the calc state is :"+ state);
+			if(container_type != Container_Type.JAVA) {
+				int rs = -1;
+				try {
+					rs = NativeUtils.callNative(NativeUtils.CMD_CODE_PUT_OFF,
+							pairOfBuffer.offset, null, cmd_args);
+					Assert.assertTrue(rs == NativeUtils.ERR_CODE_OK);
+					rs = NativeUtils.callNative(NativeUtils.CMD_CODE_PUT_DATA,
+							pairOfBuffer.value, null, cmd_args);
+					pairOfBuffer.offset.flip();
+	    		    pairOfBuffer.value.flip();
+					cmd_args = ICTMapper.DEFAULT_ARGS;// frame will hold the cmd_args until cmd_args changed
+					Assert.assertTrue(rs == NativeUtils.ERR_CODE_OK);
+				} catch (NativeException e) {
+					logger.error(e);
+					throw new RuntimeException(e);
+				}
+				//clean
+				pairOfBuffer.clear();
+		        int state = calc(context);
+	        	logger.info("the calc state is :"+ state);
+			}
 	    } finally {
-	      cleanup(context);
+	        cleanup(context);
 	    }
+	}
+
+	protected void JAVAmap(KEYIN key, VALUEIN value, 
+	                     Context context) throws IOException, InterruptedException {
+	    context.write((KEYOUT) key, (VALUEOUT) value);
+	}
+	private boolean isBufferNotFull() {
+		return pairOfBuffer.value.position() + maxRecordSize < pairOfBuffer.value.capacity();
 	}
 
 	/**
@@ -131,27 +181,57 @@ public abstract class ICTMapper<KEYIN,VALUEIN,KEYOUT,VALUEOUT> extends
 	protected void map(KEYIN key, VALUEIN info, Context context)
 			throws IOException, InterruptedException {
 		int rs = NativeUtils.ERR_CODE_ERR;
-		PairOfByteBuffers pair = null;
-		if(info instanceof PairOfByteBuffers){
-			pair = (PairOfByteBuffers)info;
-		}else{
-			throw new IOException("The VALUEIN is not a instance of PairOfByteBuffers!");
+		int halfOfBufferSize = pairOfBuffer.value.capacity() / 2;
+        maxRecordSize = halfOfBufferSize;
+
+		if(isBufferNotFull()) {
+			parseRecordintoBuffer(key, info);
 		}
-		try {
-			rs = NativeUtils.callNative(NativeUtils.CMD_CODE_PUT_OFF,
-					pair.offset, null, cmd_args);
-			Assert.assertTrue(rs == NativeUtils.ERR_CODE_OK);
-			rs = NativeUtils.callNative(NativeUtils.CMD_CODE_PUT_DATA,
-					pair.value, null, cmd_args);
-			cmd_args = ICTMapper.DEFAULT_ARGS;// frame will hold the cmd_args until cmd_args changed
-			Assert.assertTrue(rs == NativeUtils.ERR_CODE_OK);
-		} catch (NativeException e) {
-			logger.error(e);
-			throw new RuntimeException(e);
+		else {
+			try {
+				pairOfBuffer.offset.flip();
+	    	    pairOfBuffer.value.flip();
+				rs = NativeUtils.callNative(NativeUtils.CMD_CODE_PUT_OFF,
+						pairOfBuffer.offset, null, cmd_args);
+				Assert.assertTrue(rs == NativeUtils.ERR_CODE_OK);
+				rs = NativeUtils.callNative(NativeUtils.CMD_CODE_PUT_DATA,
+						pairOfBuffer.value, null, cmd_args);
+				pairOfBuffer.offset.flip();
+	    	    pairOfBuffer.value.flip();
+				cmd_args = ICTMapper.DEFAULT_ARGS;// frame will hold the cmd_args until cmd_args changed
+				Assert.assertTrue(rs == NativeUtils.ERR_CODE_OK);
+			} catch (NativeException e) {
+				logger.error(e);
+				throw new RuntimeException(e);
+			}
 		}
-		//clean
-		pair.clear();
 	}
+
+//// map func. in ori framework	
+//	protected void map(KEYIN key, VALUEIN info, Context context)
+//			throws IOException, InterruptedException {
+//		int rs = NativeUtils.ERR_CODE_ERR;
+//		PairOfByteBuffers pairOfBuffer = null;
+//		if(info instanceof PairOfByteBuffers){
+//			pairOfBuffer = (PairOfByteBuffers)info;
+//		}else{
+//			throw new IOException("The VALUEIN is not a instance of PairOfByteBuffers!");
+//		}
+//		try {
+//			rs = NativeUtils.callNative(NativeUtils.CMD_CODE_PUT_OFF,
+//					pairOfBuffer.offset, null, cmd_args);
+//			Assert.assertTrue(rs == NativeUtils.ERR_CODE_OK);
+//			rs = NativeUtils.callNative(NativeUtils.CMD_CODE_PUT_DATA,
+//					pairOfBuffer.value, null, cmd_args);
+//			cmd_args = ICTMapper.DEFAULT_ARGS;// frame will hold the cmd_args until cmd_args changed
+//			Assert.assertTrue(rs == NativeUtils.ERR_CODE_OK);
+//		} catch (NativeException e) {
+//			logger.error(e);
+//			throw new RuntimeException(e);
+//		}
+//		//clean
+//		pairOfBuffer.clear();
+//	}
 	
 	/**
 	 * do clean and more free the JNI -- CPU or GPU memory .
@@ -162,16 +242,19 @@ public abstract class ICTMapper<KEYIN,VALUEIN,KEYOUT,VALUEOUT> extends
 	protected void cleanup(Context context)
 			throws IOException, InterruptedException {
 		super.cleanup(context);
-		int rs = -1;
-		try {
-			rs = NativeUtils.callNative(NativeUtils.CMD_CODE_FREE_MEM, null, null, cmd_args);
-			Assert.assertTrue(rs == NativeUtils.ERR_CODE_OK);
-			cmd_args = ICTMapper.DEFAULT_ARGS;
-		}catch(NativeException e){
-			logger.error(e);
-			throw new RuntimeException(e);
+		if(container_type != Container_Type.JAVA) {
+			int rs = -1;
+			try {
+				rs = NativeUtils.callNative(NativeUtils.CMD_CODE_FREE_MEM, null, null, cmd_args);
+				Assert.assertTrue(rs == NativeUtils.ERR_CODE_OK);
+				cmd_args = ICTMapper.DEFAULT_ARGS;
+			}catch(NativeException e){
+				logger.error(e);
+				throw new RuntimeException(e);
+			}
+	
+			logger.info("clean JNI Memory  ... OK");
 		}
-		logger.info("clean JNI Memory  ... OK");
 	}
 
 	/**
@@ -181,8 +264,8 @@ public abstract class ICTMapper<KEYIN,VALUEIN,KEYOUT,VALUEOUT> extends
 	 * @throws IOException
 	 * @throws InterruptedException
 	 */
-	 protected abstract int calc(Context context) throws IOException,	InterruptedException ;
-
+	protected abstract int calc(Context context) throws IOException,	InterruptedException ;
+	protected abstract void parseRecordintoBuffer(KEYIN key, VALUEIN value);
 	/**
 	 * 
 	 * @return
@@ -334,6 +417,22 @@ public abstract class ICTMapper<KEYIN,VALUEIN,KEYOUT,VALUEOUT> extends
         return -1;
     }
 
+	/**
+	 * Impl. of program  preference: CPU, GPU or JAVA (by default)
+	 * @author hwt
+	 */
+	public enum Container_Type {
+		GPU, OMP, JAVA;
+		public static Container_Type getPref_Impl(String prefStr) {
+		   logger.info("user preferred impl. on CPU" + prefStr); 
+			if (prefStr.trim().equalsIgnoreCase("JAVA"))
+				return Container_Type.JAVA;
+			else if (prefStr.trim().equalsIgnoreCase("OMP"))
+				return Container_Type.OMP;
+			else
+				return Container_Type.JAVA;
+		}
+	}
 	/**
 	 * CPU or GPU preference: ONLY_CPU , ONLY_GPU or BOTH
 	 * @author lubinbin
