@@ -67,6 +67,8 @@ public class FSSchedulerNode extends SchedulerNode {
   public FSSchedulerNode(RMNode node) {
     this.rmNode = node;
     this.availableResource = Resources.clone(node.getTotalCapability());
+      // correct!
+      LOG.info("Avail CPU" + availableResource.getVirtualCores() + ", Avail GPU" + availableResource.getGPUCores());
   }
 
   public RMNode getRMNode() {

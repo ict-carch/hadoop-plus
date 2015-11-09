@@ -110,7 +110,7 @@ import com.google.common.annotations.VisibleForTesting;
  * referred to as "root.queue1", and a queue named "queue2" under a queue
  * named "parent1" would be referred to as "root.parent1.queue2".
  */
-@LimitedPrivate("yarn")
+//@LimitedPrivate("yarn")
 @Unstable
 @SuppressWarnings("unchecked")
 public class FairScheduler implements ResourceScheduler {
@@ -250,6 +250,8 @@ public class FairScheduler implements ResourceScheduler {
     public void run() {
       while (true) {
         try {
+//          long threadId = Thread.currentThread().getId();
+//          LOG.info("Update Thread of id " + threadId);
           Thread.sleep(UPDATE_INTERVAL);
           update();
           preemptTasksIfNecessary();
@@ -791,10 +793,19 @@ public class FairScheduler implements ResourceScheduler {
           "or non existant application " + appAttemptId);
       return EMPTY_ALLOCATION;
     }
+    //correct!
+    /**
+    for (ResourceRequest a : ask) {
+      LOG.info("resource before normalized: " + a.getCapability());
+    }
+     */
 
     // Sanity check
     SchedulerUtils.normalizeRequests(ask, new DominantResourceCalculator(),
         clusterCapacity, minimumAllocation, maximumAllocation, incrAllocation);
+//    for (ResourceRequest a : ask) {
+//      LOG.info("resource after normalized: " + a.getCapability());
+//    }
 
     // Release containers
     for (ContainerId releasedContainerId : release) {

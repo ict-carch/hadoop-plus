@@ -19,6 +19,8 @@ package org.apache.hadoop.yarn.server.resourcemanager.scheduler;
 
 import java.util.List;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.classification.InterfaceAudience.Private;
 import org.apache.hadoop.classification.InterfaceStability.Unstable;
 import org.apache.hadoop.yarn.api.records.ContainerExitStatus;
@@ -41,7 +43,7 @@ import org.apache.hadoop.yarn.util.resource.Resources;
 @Private
 @Unstable
 public class SchedulerUtils {
-  
+    private static final Log LOG = LogFactory.getLog(SchedulerUtils.class);
   private static final RecordFactory recordFactory = 
       RecordFactoryProvider.getRecordFactory(null);
 
@@ -94,7 +96,10 @@ public class SchedulerUtils {
     Resource clusterResource,
     Resource minimumResource,
     Resource maximumResource) {
+//      LOG.info("calculator.class: " + resourceCalculator.getClass().toString());
+//      resourceCalculator.compare(clusterResource, minimumResource, maximumResource);
     for (ResourceRequest ask : asks) {
+//        LOG.info("resource before normalized: " + ask.getCapability());
       normalizeRequest(
         ask, resourceCalculator, clusterResource, minimumResource,
         maximumResource, minimumResource);
@@ -129,7 +134,11 @@ public class SchedulerUtils {
       Resource minimumResource,
       Resource maximumResource,
       Resource incrementResource) {
+      //correct!
+//      LOG.info("calculator.class: " + resourceCalculator.getClass().toString());
     for (ResourceRequest ask : asks) {
+        //correct!
+//        LOG.info("resource before normalized: " + ask.getCapability());
       normalizeRequest(
           ask, resourceCalculator, clusterResource, minimumResource,
           maximumResource, incrementResource);
@@ -147,11 +156,16 @@ public class SchedulerUtils {
       Resource minimumResource,
       Resource maximumResource,
       Resource incrementResource) {
+      LOG.info("calculator.class: " + resourceCalculator.getClass().toString());
+      LOG.info("resource before normalized: " + ask.getCapability());
+
     Resource normalized = 
         Resources.normalize(
             resourceCalculator, ask.getCapability(), minimumResource,
             maximumResource, incrementResource);
     ask.setCapability(normalized);
+
+      LOG.info("resource after normalized: " + ask.getCapability());
   }
 
   /**

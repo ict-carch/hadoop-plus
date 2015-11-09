@@ -20,7 +20,16 @@ package org.apache.hadoop.yarn.util.resource;
 import org.apache.hadoop.classification.InterfaceAudience.Private;
 import org.apache.hadoop.classification.InterfaceStability.Unstable;
 import org.apache.hadoop.yarn.api.records.Resource;
-
+// TO BE REMOVED
+import java.io.File;
+import java.io.IOException;
+import java.io.FileOutputStream;
+import java.io.PrintStream;
+import java.io.FileNotFoundException;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.apache.hadoop.yarn.exceptions.YarnRuntimeException;
+//import org.apache.hadoop.yarn.server.resourcemanager.scheduler.fair.FairScheduler;
 /**
  * A {@link ResourceCalculator} which uses the concept of  
  * <em>dominant resource</em> to compare multi-dimensional resources.
@@ -45,14 +54,18 @@ import org.apache.hadoop.yarn.api.records.Resource;
 @Private
 @Unstable
 public class DominantResourceCalculator extends ResourceCalculator {
-  
-  @Override
+//    private static final Log LOG = LogFactory.getLog(FairScheduler.class);
+    private static final Log LOG = LogFactory.getLog(DominantResourceCalculator.class);
+
+//    public DominantResourceCalculator() {
+//        LOG.info("this is: " + DominantResourceCalculator.class.getName());
+//    }
+    @Override
   public int compare(Resource clusterResource, Resource lhs, Resource rhs) {
-    
     if (lhs.equals(rhs)) {
       return 0;
     }
-    
+    // return the share of dominant resource of lhs and rhs
     float l = getResourceAsValue(clusterResource, lhs, true);
     float r = getResourceAsValue(clusterResource, rhs, true);
     
@@ -84,22 +97,28 @@ public class DominantResourceCalculator extends ResourceCalculator {
       Resource clusterResource, Resource resource, boolean dominant) {
     // Just use 'dominant' resource
     return (dominant) ?
+            Math.max(
+                    (float)resource.getGPUCores() / clusterResource.getGPUCores(),
         Math.max(
             (float)resource.getMemory() / clusterResource.getMemory(), 
             (float)resource.getVirtualCores() / clusterResource.getVirtualCores()
-            ) 
-        :
-          Math.min(
-              (float)resource.getMemory() / clusterResource.getMemory(), 
-              (float)resource.getVirtualCores() / clusterResource.getVirtualCores()
-              ); 
+        ))
+            :
+            Math.min(
+                    (float)resource.getGPUCores() / clusterResource.getGPUCores(),
+            Math.min(
+                    (float) resource.getMemory() / clusterResource.getMemory(),
+                    (float) resource.getVirtualCores() / clusterResource.getVirtualCores()
+              ));
   }
   
   @Override
   public int computeAvailableContainers(Resource available, Resource required) {
     return Math.min(
+            available.getGPUCores() / required.getGPUCores(),
+            Math.min(
         available.getMemory() / required.getMemory(), 
-        available.getVirtualCores() / required.getVirtualCores());
+        available.getVirtualCores() / required.getVirtualCores()));
   }
 
   @Override
@@ -112,17 +131,20 @@ public class DominantResourceCalculator extends ResourceCalculator {
 
   @Override
   public float ratio(Resource a, Resource b) {
-    return Math.max(
+      return Math.max(
+            (float)a.getGPUCores()/b.getGPUCores(),
+            Math.max(
         (float)a.getMemory()/b.getMemory(), 
         (float)a.getVirtualCores()/b.getVirtualCores()
-        );
+        ));
   }
 
   @Override
   public Resource divideAndCeil(Resource numerator, int denominator) {
     return Resources.createResource(
         divideAndCeil(numerator.getMemory(), denominator),
-        divideAndCeil(numerator.getVirtualCores(), denominator)
+        divideAndCeil(numerator.getVirtualCores(), denominator),
+            numerator.getGPUCores(), numerator.getGPUId()
         );
   }
 
@@ -139,51 +161,107 @@ public class DominantResourceCalculator extends ResourceCalculator {
         Math.max(r.getVirtualCores(), minimumResource.getVirtualCores()),
         stepFactor.getVirtualCores()),
       maximumResource.getVirtualCores());
-    return Resources.createResource(normalizedMemory,
-      normalizedCores);
+      if(r.getGPUCores() > 0) {
+          return Resources.createResource(normalizedMemory,
+                  normalizedCores, r.getGPUCores(), r.getGPUId());
+      }
+      else {
+          return Resources.createResource(normalizedMemory,
+                  normalizedCores);
+      }
+
   }
 
   @Override
   public Resource roundUp(Resource r, Resource stepFactor) {
-    return Resources.createResource(
-        roundUp(r.getMemory(), stepFactor.getMemory()), 
-        roundUp(r.getVirtualCores(), stepFactor.getVirtualCores())
-        );
+      if(r.getGPUCores() > 0) {
+          return Resources.createResource(
+                  roundUp(r.getMemory(), stepFactor.getMemory()),
+                  roundUp(r.getVirtualCores(), stepFactor.getVirtualCores()),
+                  roundUp(r.getGPUCores(), stepFactor.getGPUCores()),
+                  r.getGPUId()
+          );
+      }
+      else {
+          return Resources.createResource(
+                  roundUp(r.getMemory(), stepFactor.getMemory()),
+                  roundUp(r.getVirtualCores(), stepFactor.getVirtualCores()));
+      }
   }
 
   @Override
   public Resource roundDown(Resource r, Resource stepFactor) {
-    return Resources.createResource(
-        roundDown(r.getMemory(), stepFactor.getMemory()),
-        roundDown(r.getVirtualCores(), stepFactor.getVirtualCores())
-        );
+      if(r.getGPUCores() > 0) {
+          return Resources.createResource(
+                  roundDown(r.getMemory(), stepFactor.getMemory()),
+                  roundDown(r.getVirtualCores(), stepFactor.getVirtualCores()),
+                  roundDown(r.getGPUCores(), stepFactor.getGPUCores()),
+                  r.getGPUId()
+          );
+      }
+      else{
+          return Resources.createResource(
+                  roundDown(r.getMemory(), stepFactor.getMemory()),
+                  roundDown(r.getVirtualCores(), stepFactor.getVirtualCores())
+          );
+      }
   }
 
   @Override
   public Resource multiplyAndNormalizeUp(Resource r, double by,
       Resource stepFactor) {
-    return Resources.createResource(
-        roundUp(
-            (int)Math.ceil(r.getMemory() * by), stepFactor.getMemory()),
-        roundUp(
-            (int)Math.ceil(r.getVirtualCores() * by), 
-            stepFactor.getVirtualCores())
-        );
+      if(r.getGPUCores() > 0) {
+          return Resources.createResource(
+                  roundUp(
+                          (int) Math.ceil(r.getMemory() * by), stepFactor.getMemory()),
+                  roundUp(
+                          (int) Math.ceil(r.getVirtualCores() * by),
+                          stepFactor.getVirtualCores()),
+                  roundUp(
+                          (int) Math.ceil(r.getGPUCores() * by),
+                          stepFactor.getGPUCores()),
+                  r.getGPUId()
+          );
+      }
+      else {
+          return Resources.createResource(
+                  roundUp(
+                          (int) Math.ceil(r.getMemory() * by), stepFactor.getMemory()),
+                  roundUp(
+                          (int) Math.ceil(r.getVirtualCores() * by),
+                          stepFactor.getVirtualCores())
+          );
+      }
   }
 
   @Override
   public Resource multiplyAndNormalizeDown(Resource r, double by,
       Resource stepFactor) {
-    return Resources.createResource(
-        roundDown(
-            (int)(r.getMemory() * by), 
-            stepFactor.getMemory()
-            ),
-        roundDown(
-            (int)(r.getVirtualCores() * by), 
-            stepFactor.getVirtualCores()
-            )
-        );
+      if(r.getGPUCores() > 0) {
+          return Resources.createResource(
+                  roundDown(
+                          (int) Math.ceil(r.getMemory() * by), stepFactor.getMemory()),
+                  roundDown(
+                          (int) Math.ceil(r.getVirtualCores() * by),
+                          stepFactor.getVirtualCores()),
+                  roundDown(
+                          (int) Math.ceil(r.getGPUCores() * by),
+                          stepFactor.getGPUCores()),
+                  r.getGPUId()
+          );
+      }
+      else {
+          return Resources.createResource(
+                  roundDown(
+                          (int) (r.getMemory() * by),
+                          stepFactor.getMemory()
+                  ),
+                  roundDown(
+                          (int) (r.getVirtualCores() * by),
+                          stepFactor.getVirtualCores()
+                  )
+          );
+      }
   }
 
 }

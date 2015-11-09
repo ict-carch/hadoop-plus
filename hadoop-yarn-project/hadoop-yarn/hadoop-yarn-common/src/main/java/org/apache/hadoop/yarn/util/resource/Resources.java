@@ -18,18 +18,23 @@
 
 package org.apache.hadoop.yarn.util.resource;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.classification.InterfaceAudience.Private;
 import org.apache.hadoop.classification.InterfaceStability.Unstable;
 import org.apache.hadoop.yarn.api.records.Resource;
+import org.apache.hadoop.yarn.exceptions.YarnRuntimeException;
 import org.apache.hadoop.yarn.util.Records;
+import org.apache.hadoop.yarn.exceptions.YarnRuntimeException;
 
 @Private
 @Unstable
 public class Resources {
-  
+  private static final Log LOG = LogFactory.getLog(Resources.class);
   // Java doesn't have const :(
   private static final Resource NONE = new Resource() {
 
@@ -145,8 +150,7 @@ public class Resources {
     
   };
 
-  public static Resource createResource(int memory) {
-    return createResource(memory, (memory > 0) ? 1 : 0);
+  public static Resource createResource(int memory) {    return createResource(memory, (memory > 0) ? 1 : 0);
   }
 
   public static Resource createResource(int memory, int cores) {
@@ -193,9 +197,14 @@ public class Resources {
   public static Resource addTo(Resource lhs, Resource rhs) {
     lhs.setMemory(lhs.getMemory() + rhs.getMemory());
     lhs.setVirtualCores(lhs.getVirtualCores() + rhs.getVirtualCores());
+//    LOG.info("to set GPU Cores: " + (lhs.getGPUCores() + rhs.getGPUCores()));
     lhs.setGPUCores(lhs.getGPUCores() + rhs.getGPUCores());
-    if(rhs.getGPUCores()>0)
+//    LOG.info("remaining GPUs: " + rhs.getGPUCores());
+    if(rhs.getGPUCores()>0 && rhs.getGPUId().size() > 0)
     {
+//      for(Integer i : rhs.getGPUId()) {
+//        LOG.info(i);
+//      }
     	if(lhs.getGPUId()==null||lhs.getGPUId().size()<1)
     	{
     		List<Integer> lhsGpuId = new ArrayList<Integer>();
@@ -216,16 +225,17 @@ public class Resources {
     lhs.setMemory(lhs.getMemory() - rhs.getMemory());
     lhs.setVirtualCores(lhs.getVirtualCores() - rhs.getVirtualCores());
     lhs.setGPUCores(lhs.getGPUCores() - rhs.getGPUCores());
-    if(rhs.getGPUCores()!=0)
-    {
-    	if(lhs.getGPUId()!=null&&lhs.getGPUId().size()>0)
-    		for(int i=0;i<lhs.getGPUId().size();i++)
-    			if(lhs.getGPUId().get(i)==rhs.getGPUId().get(0))
-    			{
-    				lhs.getGPUId().remove(i); // find the released gpu id and delete
-    				break;
-    			}
+//    LOG.info("substract from " + lhs.getGPUCores() + " GPUs: ");
+//    for(Integer i : lhs.getGPUId()) {
+//      LOG.info(i);
+//    }
+//    // TO fix!!! seems to substract more than offered! but the gpuid list is correctly cleared
+//    LOG.info("to substract " + rhs.getGPUCores() + " GPUs: ");
+    for(Integer i : rhs.getGPUId()) {
+//      LOG.info("remove " + i + " GPU from cluster available GPUs");
+      lhs.getGPUId().remove(i);
     }
+
     return lhs;
   }
 
@@ -269,6 +279,7 @@ public class Resources {
   public static Resource normalize(
       ResourceCalculator calculator, Resource lhs, Resource min,
       Resource max, Resource increment) {
+//    LOG.info("resource before normalized: Mem: " + lhs.getMemory() + ", CPU: " + lhs.getVirtualCores() + ", GPU: " + lhs.getGPUCores());
     return calculator.normalize(lhs, min, max, increment);
   }
   

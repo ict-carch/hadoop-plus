@@ -217,6 +217,7 @@ public class AppSchedulingInfo {
   synchronized public ResourceRequest getResourceRequest(Priority priority,
       String resourceName) {
     Map<String, ResourceRequest> nodeRequests = requests.get(priority);
+    Set<Map.Entry<String, ResourceRequest>> ss = nodeRequests.entrySet();
     return (nodeRequests == null) ? null : nodeRequests.get(resourceName);
   }
 
@@ -260,8 +261,6 @@ public class AppSchedulingInfo {
       pending = false;
       metrics.incrAppsRunning(this, user);
     }
-    LOG.debug("allocate: user: " + user + ", memory: "
-        + request.getCapability());
     metrics.allocateResources(user, 1, request.getCapability());
   }
 

@@ -244,10 +244,10 @@ public class FifoScheduler implements ResourceScheduler, Configurable {
             YarnConfiguration.DEFAULT_RM_SCHEDULER_MAXIMUM_ALLOCATION_MB),
             conf.getInt(
             		YarnConfiguration.RM_SCHEDULER_MAXIMUM_ALLOCATION_VCORES,
-            		YarnConfiguration.DEFAULT_RM_SCHEDULER_MINIMUM_ALLOCATION_VCORES),
+            		YarnConfiguration.DEFAULT_RM_SCHEDULER_MAXIMUM_ALLOCATION_VCORES),
             conf.getInt(
             		YarnConfiguration.RM_SCHEDULER_MAXIMUM_ALLOCATION_GPU_CORES,
-            		YarnConfiguration.DEFAULT_RM_SCHEDULER_MINIMUM_ALLOCATION_GPU_CORES));
+            		YarnConfiguration.DEFAULT_RM_SCHEDULER_MAXIMUM_ALLOCATION_GPU_CORES));
       this.metrics = QueueMetrics.forQueue(DEFAULT_QUEUE_NAME, null, false,
           conf);
       this.activeUsersManager = new ActiveUsersManager(metrics);

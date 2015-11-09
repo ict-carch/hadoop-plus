@@ -22,6 +22,8 @@ package org.apache.hadoop.yarn.api.records.impl.pb;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.classification.InterfaceAudience.Private;
 import org.apache.hadoop.classification.InterfaceStability.Unstable;
 import org.apache.hadoop.yarn.api.records.Resource;
@@ -37,6 +39,7 @@ import org.apache.hadoop.yarn.proto.YarnProtos.ResourceProtoOrBuilder;
  * @description Add GPU resource and related functions
  */
 public class ResourcePBImpl extends Resource {
+  private static final Log LOG = LogFactory.getLog(ResourcePBImpl.class);
   ResourceProto proto = ResourceProto.getDefaultInstance();
   ResourceProto.Builder builder = null;
   boolean viaProto = false;
@@ -151,6 +154,12 @@ public class ResourcePBImpl extends Resource {
 	  return (p.getGpuCores());
   }
   public void setGPUCores(int gCores) {
+    /**
+	  for (StackTraceElement ste : Thread.currentThread().getStackTrace()) {
+		      LOG.info(ste);
+	  }
+    LOG.info("TO set GPU cores" + gCores);
+     */
 	    maybeInitBuilder();
 	    builder.setGpuCores(gCores);
 	  }

@@ -41,7 +41,9 @@ public class FairSchedulerConfiguration extends Configuration {
   public static final String RM_SCHEDULER_INCREMENT_ALLOCATION_VCORES =
     YarnConfiguration.YARN_PREFIX + "scheduler.increment-allocation-vcores";
   public static final int DEFAULT_RM_SCHEDULER_INCREMENT_ALLOCATION_VCORES = 1;
-  
+  public static final String RM_SCHEDULER_INCREMENT_ALLOCATION_GCORES =
+          YarnConfiguration.YARN_PREFIX + "scheduler.increment-allocation-gcores";
+  public static final int DEFAULT_RM_SCHEDULER_INCREMENT_ALLOCATION_GCORES = 1;
   public static final String FS_CONFIGURATION_FILE = "fair-scheduler.xml";
 
   private static final String CONF_PREFIX =  "yarn.scheduler.fair.";
@@ -99,7 +101,10 @@ public class FairSchedulerConfiguration extends Configuration {
     int cpu = getInt(
         YarnConfiguration.RM_SCHEDULER_MINIMUM_ALLOCATION_VCORES,
         YarnConfiguration.DEFAULT_RM_SCHEDULER_MINIMUM_ALLOCATION_VCORES);
-    return Resources.createResource(mem, cpu);
+    int gpu = getInt(
+            YarnConfiguration.RM_SCHEDULER_MINIMUM_ALLOCATION_GPU_CORES,
+            YarnConfiguration.DEFAULT_RM_SCHEDULER_MINIMUM_ALLOCATION_GPU_CORES);
+    return Resources.createResource(mem, cpu, gpu);
   }
 
   public Resource getMaximumAllocation() {
@@ -109,7 +114,10 @@ public class FairSchedulerConfiguration extends Configuration {
     int cpu = getInt(
         YarnConfiguration.RM_SCHEDULER_MAXIMUM_ALLOCATION_VCORES,
         YarnConfiguration.DEFAULT_RM_SCHEDULER_MAXIMUM_ALLOCATION_VCORES);
-    return Resources.createResource(mem, cpu);
+    int gpu = getInt(
+            YarnConfiguration.RM_SCHEDULER_MAXIMUM_ALLOCATION_GPU_CORES,
+            YarnConfiguration.DEFAULT_RM_SCHEDULER_MINIMUM_ALLOCATION_GPU_CORES);
+    return Resources.createResource(mem, cpu, gpu);
   }
 
   public Resource getIncrementAllocation() {
@@ -117,9 +125,12 @@ public class FairSchedulerConfiguration extends Configuration {
       RM_SCHEDULER_INCREMENT_ALLOCATION_MB,
       DEFAULT_RM_SCHEDULER_INCREMENT_ALLOCATION_MB);
     int incrementCores = getInt(
-      RM_SCHEDULER_INCREMENT_ALLOCATION_VCORES,
-      DEFAULT_RM_SCHEDULER_INCREMENT_ALLOCATION_VCORES);
-    return Resources.createResource(incrementMemory, incrementCores);
+            RM_SCHEDULER_INCREMENT_ALLOCATION_VCORES,
+            DEFAULT_RM_SCHEDULER_INCREMENT_ALLOCATION_VCORES);
+    int incrementgCores = getInt(
+      RM_SCHEDULER_INCREMENT_ALLOCATION_GCORES,
+      DEFAULT_RM_SCHEDULER_INCREMENT_ALLOCATION_GCORES);
+    return Resources.createResource(incrementMemory, incrementCores, incrementgCores);
   }
 
   public boolean getUserAsDefaultQueue() {
@@ -178,7 +189,8 @@ public class FairSchedulerConfiguration extends Configuration {
     try {
       int memory = findResource(val, "mb");
       int vcores = findResource(val, "vcores");
-      return BuilderUtils.newResource(memory, vcores);
+      int gcores = findResource(val, "gcores");
+      return BuilderUtils.newResource(memory, vcores, gcores);
     } catch (AllocationConfigurationException ex) {
       throw ex;
     } catch (Exception ex) {

@@ -258,20 +258,21 @@ public class FSSchedulerApp extends SchedulerApplication {
   }
 
   synchronized public void showRequests() {
-    if (LOG.isDebugEnabled()) {
+    //TO BE REMOVED!!!
+//    if (LOG.isDebugEnabled()) {
       for (Priority priority : getPriorities()) {
         Map<String, ResourceRequest> requests = getResourceRequests(priority);
         if (requests != null) {
           LOG.debug("showRequests:" + " application=" + getApplicationId() + 
               " headRoom=" + getHeadroom() + 
-              " currentConsumption=" + currentConsumption.getMemory());
+              " currentConsumption=" + currentConsumption.getMemory() + currentConsumption.getGPUCores());
           for (ResourceRequest request : requests.values()) {
             LOG.debug("showRequests:" + " application=" + getApplicationId()
                 + " request=" + request);
           }
         }
       }
-    }
+//    }
   }
 
   public synchronized RMContainer getRMContainer(ContainerId id) {
@@ -548,6 +549,9 @@ public class FSSchedulerApp extends SchedulerApplication {
     liveContainers.put(container.getId(), rmContainer);    
 
     // Update consumption and track allocations
+
+    LOG.info("TO allocate in FSSchedulerApp: type: " + type + ", node " + node + ", resource: "
+            + request.getCapability());
     appSchedulingInfo.allocate(type, node, priority, request, container);
     Resources.addTo(currentConsumption, container.getResource());
 

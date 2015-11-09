@@ -29,12 +29,15 @@ import org.apache.hadoop.yarn.server.resourcemanager.scheduler.QueueMetrics;
 
 public class FSQueueMetrics extends QueueMetrics {
 
-  @Metric("Fair share of memory in MB") MutableGaugeInt fairShareMB;
+  @Metric("Fair share of fory in MB") MutableGaugeInt fairShareMB;
   @Metric("Fair share of CPU in vcores") MutableGaugeInt fairShareVCores;
+  @Metric("Fair share of GPU in gcores") MutableGaugeInt fairShareGCores;
   @Metric("Minimum share of memory in MB") MutableGaugeInt minShareMB;
   @Metric("Minimum share of CPU in vcores") MutableGaugeInt minShareVCores;
+  @Metric("Minimum share of CPU in gcores") MutableGaugeInt minShareGCores;
   @Metric("Maximum share of memory in MB") MutableGaugeInt maxShareMB;
   @Metric("Maximum share of CPU in vcores") MutableGaugeInt maxShareVCores;
+  @Metric("Maximum share of CPU in gcores") MutableGaugeInt maxShareGCores;
   
   FSQueueMetrics(MetricsSystem ms, String queueName, Queue parent,
       boolean enableUserMetrics, Configuration conf) {
@@ -44,6 +47,7 @@ public class FSQueueMetrics extends QueueMetrics {
   public void setFairShare(Resource resource) {
     fairShareMB.set(resource.getMemory());
     fairShareVCores.set(resource.getVirtualCores());
+    fairShareGCores.set(resource.getGPUCores());
   }
   
   public int getFairShareMB() {
@@ -53,10 +57,14 @@ public class FSQueueMetrics extends QueueMetrics {
   public int getFairShareVirtualCores() {
     return fairShareVCores.value();
   }
+  public int getFairShareGCores() {
+    return fairShareGCores.value();
+  }
   
   public void setMinShare(Resource resource) {
     minShareMB.set(resource.getMemory());
     minShareVCores.set(resource.getVirtualCores());
+    minShareGCores.set(resource.getGPUCores());
   }
   
   public int getMinShareMB() {
@@ -66,10 +74,14 @@ public class FSQueueMetrics extends QueueMetrics {
   public int getMinShareVirtualCores() {
     return minShareVCores.value();
   }
+  public int getMinShareGCores() {
+    return minShareGCores.value();
+  }
   
   public void setMaxShare(Resource resource) {
     maxShareMB.set(resource.getMemory());
     maxShareVCores.set(resource.getVirtualCores());
+    maxShareGCores.set(resource.getGPUCores());
   }
   
   public int getMaxShareMB() {
@@ -78,6 +90,9 @@ public class FSQueueMetrics extends QueueMetrics {
   
   public int getMaxShareVirtualCores() {
     return maxShareVCores.value();
+  }
+  public int getMaxShareGCores() {
+    return maxShareGCores.value();
   }
   
   public synchronized 

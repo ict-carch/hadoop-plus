@@ -17,14 +17,19 @@
 */
 package org.apache.hadoop.yarn.util.resource;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.classification.InterfaceAudience.Private;
 import org.apache.hadoop.classification.InterfaceStability.Unstable;
 import org.apache.hadoop.yarn.api.records.Resource;
+import org.apache.hadoop.yarn.exceptions.YarnRuntimeException;
+
+import java.io.*;
 
 @Private
 @Unstable
 public class DefaultResourceCalculator extends ResourceCalculator {
-  
+    private static final Log LOG = LogFactory.getLog(DefaultResourceCalculator.class);
   @Override
   public int compare(Resource unused, Resource lhs, Resource rhs) {
     // Only consider memory

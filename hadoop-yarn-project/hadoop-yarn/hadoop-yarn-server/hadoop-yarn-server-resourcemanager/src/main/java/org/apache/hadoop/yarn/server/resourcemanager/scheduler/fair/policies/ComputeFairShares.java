@@ -169,6 +169,7 @@ public class ComputeFairShares {
       break;
       case GPU:
         resource.setGPUCores(val);
+        break;
     default:
       throw new IllegalArgumentException("Invalid resource");
     }

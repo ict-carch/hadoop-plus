@@ -18,8 +18,10 @@
 
 package org.apache.hadoop.yarn.server.resourcemanager.scheduler.fair;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.List;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -234,8 +236,31 @@ public class AppSchedulable extends Schedulable {
 
     // How much does the node have?
     Resource available = node.getAvailableResource();
-
     Container container = null;
+    /*
+         * if this node has gpu resource and this request requests gpu, then assign it to this container
+         * otherwise, no gpu
+         */
+    if ( capability.getGPUCores() > node.getAvailableResource().getGPUCores())
+    {
+      capability=Resource.newInstance(capability);
+      capability.setGPUCores(0);  //set the require gpu as 0.
+      capability.setGPUId(null);
+    }
+
+        /*
+         * set the allocated gpu id, here we use only one gpu.
+         */
+    else if(capability.getGPUCores()>0 && capability.getGPUCores() <= node.getAvailableResource().getGPUCores())
+    {
+      capability=Resource.newInstance(capability);
+      int allocate_gpu_id=node.getAvailableResource().getGPUId().get(0);
+      //	LOG.info("[*GPU DEBUG]:available resource:"+node.getAvailableResource().getGPUId());
+      List<Integer> gpuId = new ArrayList<Integer>();
+      gpuId.add(allocate_gpu_id);
+      capability.setGPUId(gpuId);
+    }
+    request.setCapability(capability);
     if (reserved) {
       container = node.getReservedContainer().getContainer();
     } else {
@@ -274,8 +299,6 @@ public class AppSchedulable extends Schedulable {
   }
 
   private Resource assignContainer(FSSchedulerNode node, boolean reserved) {
-    LOG.info("Node offered to app: " + getName() + " reserved: " + reserved);
-
     if (reserved) {
       RMContainer rmContainer = node.getReservedContainer();
       Priority priority = rmContainer.getReservedPriority();
@@ -310,7 +333,7 @@ public class AppSchedulable extends Schedulable {
             node.getRackName());
         ResourceRequest localRequest = app.getResourceRequest(priority,
             node.getHostName());
-        
+
         if (localRequest != null && !localRequest.getRelaxLocality()) {
           LOG.warn("Relax locality off is not supported on local request: "
               + localRequest);

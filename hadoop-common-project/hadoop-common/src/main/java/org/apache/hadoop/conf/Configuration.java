@@ -2086,7 +2086,7 @@ public class Configuration implements Iterable<Map.Entry<String,String>>,
           continue;
         }
         if (!"property".equals(prop.getTagName()))
-          LOG.warn("bad conf file: element not <property>");
+          LOG.warn("bad conf file: element not <property>" + prop.getTagName());
         NodeList fields = prop.getChildNodes();
         String attr = null;
         String value = null;

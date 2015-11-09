@@ -124,9 +124,11 @@ public class ContainerTokenIdentifier extends TokenIdentifier {
     out.writeInt(this.resource.getMemory());
     out.writeInt(this.resource.getVirtualCores());
     out.writeInt(this.resource.getGPUCores());
-    if(this.resource.getGPUCores()>0)
-    	for(int i=0; i<this.resource.getGPUCores();i++)
-    		out.writeInt(this.resource.getGPUId().get(i));
+    if(this.resource.getGPUCores()>0) {
+      LOG.info("there are " + this.resource.getGPUCores() + " GPUs");
+      for (int i = 0; i < this.resource.getGPUCores(); i++)
+        out.writeInt(this.resource.getGPUId().get(i));
+    }
     out.writeLong(this.expiryTimeStamp);
     out.writeInt(this.masterKeyId);
     out.writeLong(this.rmIdentifier);

@@ -62,6 +62,7 @@ public class QueueMetrics implements MetricsSource {
 
   @Metric("Allocated memory in MB") MutableGaugeInt allocatedMB;
   @Metric("Allocated CPU in virtual cores") MutableGaugeInt allocatedVCores;
+
   /*
    * @author Tim
    * @date 2013-10-15
