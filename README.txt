@@ -17,4 +17,4 @@ Users can reference the interfaces provided by Hadoop+ under “hadoop-plus/fram
 
 Publication
 --------------
-For more details of Hadoop+, you can reference our paper “Modeling and Evaluating the Heterogeneity for MapReduce Applications in Heterogeneous Clusters” accepted by ICS(International Conference on Supercomputing) 2015. It will be published in June, 2015.
+For more details of Hadoop+, you can reference our paper “Hadoop+: Modeling and Evaluating the Heterogeneity for MapReduce Applications in Heterogeneous Clusters” accepted by ICS(International Conference on Supercomputing) 2015. It will be published in June, 2015.
