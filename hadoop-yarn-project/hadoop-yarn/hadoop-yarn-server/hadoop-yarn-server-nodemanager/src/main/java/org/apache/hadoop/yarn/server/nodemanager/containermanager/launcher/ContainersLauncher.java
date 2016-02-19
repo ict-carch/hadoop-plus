@@ -124,7 +124,7 @@ public class ContainersLauncher extends AbstractService
             new ContainerLaunch(context, getConfig(), dispatcher, exec, app,
               event.getContainer(), dirsHandler);
 		// TODO: currently only limit the tasks with GPU to be pipelined for IO
-		if(container.getResource().getGPUCores() > 0){
+/*		if(container.getResource().getGPUCores() > 0){
 		  new Thread(new Runnable() {
 			  @Override
 			  public void run() {
@@ -156,11 +156,11 @@ public class ContainersLauncher extends AbstractService
 		  }).start();
 	    }
 	    else
-	    {
+	    {*/
         running.put(containerId,
             new RunningContainer(containerLauncher.submit(launch), 
                 launch));
-		}
+//		}
         break;
       case CLEANUP_CONTAINER:
         RunningContainer rContainerDatum = running.remove(containerId);
